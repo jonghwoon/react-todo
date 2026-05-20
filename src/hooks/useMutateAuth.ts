@@ -1,9 +1,8 @@
-import axios from 'axios'
-import { useEffect } from 'react'
+import axios from './axios'
 import { useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import useStore from '../store'
-import { Credential, CsrfToken } from '../types'
+import { Credential } from '../types'
 import { useError } from '../hooks/useError'
 
 export const useMutateAuth = () => {
@@ -11,21 +10,14 @@ export const useMutateAuth = () => {
   const resetEditedTask = useStore((state) => state.resetEditedTask)
   const { switchErrorHandling } = useError()
 
-  useEffect(() => {
-    const getCsrfToken = async () => {
-      const { data } = await axios.get<CsrfToken>(
-        `${process.env.REACT_APP_API_URL}/csrf`,
-      )
-      axios.defaults.headers.common['X-CSRF-TOKEN'] = data.csrf_token
-    }
-    getCsrfToken()
-  }, [])
-
   const loginMutation = useMutation(
-    async (user: Credential) =>
-      await axios.post(`${process.env.REACT_APP_API_URL}/login`, user),
+    async (user: Credential) => await axios.post(`/login`, user),
     {
-      onSuccess: () => {
+      onSuccess: (res) => {
+        // 백엔드 응답에 JWT 토큰이 포함되어 있다고 가정합니다 (예: res.data.token)
+        if (res.data.token) {
+          localStorage.setItem('jwt_token', res.data.token)
+        }
         navigate('/todo')
       },
       onError: (err: any) => {
@@ -38,8 +30,7 @@ export const useMutateAuth = () => {
     },
   )
   const registerMutation = useMutation(
-    async (user: Credential) =>
-      await axios.post(`${process.env.REACT_APP_API_URL}/signup`, user),
+    async (user: Credential) => await axios.post(`/signup`, user),
     {
       onError: (err: any) => {
         if (err.response.data.message) {
@@ -50,21 +41,19 @@ export const useMutateAuth = () => {
       },
     },
   )
-  const logoutMutation = useMutation(
-    async () => await axios.post(`${process.env.REACT_APP_API_URL}/logout`),
-    {
-      onSuccess: () => {
-        resetEditedTask()
-        navigate('/')
-      },
-      onError: (err: any) => {
-        if (err.response.data.message) {
-          switchErrorHandling(err.response.data.message)
-        } else {
-          switchErrorHandling(err.response.data)
-        }
-      },
+  const logoutMutation = useMutation(async () => await axios.post(`/logout`), {
+    onSuccess: () => {
+      resetEditedTask()
+      localStorage.removeItem('jwt_token')
+      navigate('/')
     },
-  )
+    onError: (err: any) => {
+      if (err.response.data.message) {
+        switchErrorHandling(err.response.data.message)
+      } else {
+        switchErrorHandling(err.response.data)
+      }
+    },
+  })
   return { loginMutation, registerMutation, logoutMutation }
 }

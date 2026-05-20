@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios from './axios'
 import { useQueryClient, useMutation } from '@tanstack/react-query'
 import { Task } from '../types'
 import useStore from '../store'
@@ -11,7 +11,7 @@ export const useMutateTask = () => {
 
   const createTaskMutation = useMutation(
     (task: Omit<Task, 'id' | 'created_at' | 'updated_at'>) =>
-      axios.post<Task>(`${process.env.REACT_APP_API_URL}/tasks`, task),
+      axios.post<Task>(`/tasks`, task),
     {
       onSuccess: (res) => {
         const previousTasks = queryClient.getQueryData<Task[]>(['tasks'])
@@ -31,7 +31,7 @@ export const useMutateTask = () => {
   )
   const updateTaskMutation = useMutation(
     (task: Omit<Task, 'created_at' | 'updated_at'>) =>
-      axios.put<Task>(`${process.env.REACT_APP_API_URL}/tasks/${task.id}`, {
+      axios.put<Task>(`/tasks/${task.id}`, {
         title: task.title,
       }),
     {
@@ -57,8 +57,7 @@ export const useMutateTask = () => {
     },
   )
   const deleteTaskMutation = useMutation(
-    (id: number) =>
-      axios.delete(`${process.env.REACT_APP_API_URL}/tasks/${id}`),
+    (id: number) => axios.delete(`/tasks/${id}`),
     {
       onSuccess: (_, variables) => {
         const previousTasks = queryClient.getQueryData<Task[]>(['tasks'])
