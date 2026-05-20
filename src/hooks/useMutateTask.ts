@@ -27,7 +27,7 @@ export const useMutateTask = () => {
           switchErrorHandling(err.response.data)
         }
       },
-    }
+    },
   )
   const updateTaskMutation = useMutation(
     (task: Omit<Task, 'created_at' | 'updated_at'>) =>
@@ -41,8 +41,8 @@ export const useMutateTask = () => {
           queryClient.setQueryData<Task[]>(
             ['tasks'],
             previousTasks.map((task) =>
-              task.id === variables.id ? res.data : task
-            )
+              task.id === variables.id ? res.data : task,
+            ),
           )
         }
         resetEditedTask()
@@ -54,7 +54,7 @@ export const useMutateTask = () => {
           switchErrorHandling(err.response.data)
         }
       },
-    }
+    },
   )
   const deleteTaskMutation = useMutation(
     (id: number) =>
@@ -65,7 +65,7 @@ export const useMutateTask = () => {
         if (previousTasks) {
           queryClient.setQueryData<Task[]>(
             ['tasks'],
-            previousTasks.filter((task) => task.id !== variables)
+            previousTasks.filter((task) => task.id !== variables),
           )
         }
         resetEditedTask()
@@ -77,7 +77,7 @@ export const useMutateTask = () => {
           switchErrorHandling(err.response.data)
         }
       },
-    }
+    },
   )
   return {
     createTaskMutation,
