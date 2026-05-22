@@ -33,6 +33,7 @@ export const useMutateTask = () => {
     (task: Omit<Task, 'created_at' | 'updated_at'>) =>
       axios.put<Task>(`/tasks/${task.id}`, {
         title: task.title,
+        completed: task.completed,
       }),
     {
       onSuccess: (res, variables) => {
@@ -42,6 +43,34 @@ export const useMutateTask = () => {
             ['tasks'],
             previousTasks.map((task) =>
               task.id === variables.id ? res.data : task,
+            ),
+          )
+        }
+      },
+      onError: (err: any) => {
+        if (err.response.data.message) {
+          switchErrorHandling(err.response.data.message)
+        } else {
+          switchErrorHandling(err.response.data)
+        }
+      },
+    },
+  )
+  const updateTaskStatusMutation = useMutation(
+    async (task: { id: number; completed: boolean }) =>
+      await axios.put(`/tasks/${task.id}/status`, {
+        completed: task.completed,
+      }),
+    {
+      onSuccess: (res, variables) => {
+        const previousTasks = queryClient.getQueryData<Task[]>(['tasks'])
+        if (previousTasks) {
+          queryClient.setQueryData<Task[]>(
+            ['tasks'],
+            previousTasks.map((t) =>
+              t.id === variables.id
+                ? { ...t, completed: variables.completed }
+                : t,
             ),
           )
         }
@@ -81,6 +110,7 @@ export const useMutateTask = () => {
   return {
     createTaskMutation,
     updateTaskMutation,
+    updateTaskStatusMutation,
     deleteTaskMutation,
   }
 }

@@ -1,4 +1,4 @@
-import { FormEvent } from 'react'
+import { FormEvent, useMemo } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ArrowRightOnRectangleIcon,
@@ -9,6 +9,13 @@ import { useQueryTasks } from '../hooks/useQueryTasks'
 import { useMutateTask } from '../hooks/useMutateTask'
 import { useMutateAuth } from '../hooks/useMutateAuth'
 import { TaskItem } from './TaskItem'
+
+const getLocalDateStr = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
 export const Todo = () => {
   const queryClient = useQueryClient()
@@ -31,6 +38,39 @@ export const Todo = () => {
     await logoutMutation.mutateAsync()
     queryClient.removeQueries(['tasks'])
   }
+
+  const groupedTasks = useMemo(() => {
+    if (!data) return []
+
+    const groups: Record<string, typeof data> = {}
+    const todayStr = getLocalDateStr(new Date())
+
+    data.forEach((task) => {
+      let createdDateStr = todayStr
+      if (task.created_at) {
+        createdDateStr = getLocalDateStr(new Date(task.created_at))
+      }
+
+      let groupDateStr = createdDateStr
+
+      if (!task.completed && createdDateStr < todayStr) {
+        groupDateStr = todayStr
+      }
+
+      if (!groups[groupDateStr]) {
+        groups[groupDateStr] = []
+      }
+      groups[groupDateStr].push(task)
+    })
+
+    return Object.keys(groups)
+      .sort((a, b) => (a < b ? 1 : -1))
+      .map((date) => ({
+        date,
+        tasks: groups[date],
+      }))
+  }, [data])
+
   return (
     <div className="flex justify-center items-center flex-col min-h-screen text-gray-600 font-mono">
       <div className="flex items-center my-3">
@@ -61,11 +101,36 @@ export const Todo = () => {
       {isLoading ? (
         <p>Loading...</p>
       ) : (
-        <ul className="my-5">
-          {data?.map((task) => (
-            <TaskItem key={task.id} id={task.id} title={task.title} />
+        <div className="my-5 w-full max-w-sm">
+          {groupedTasks.map(({ date, tasks }) => (
+            <div key={date} className="mb-6">
+              <h3 className="text-xl font-bold mb-2 border-b-2 border-indigo-200 pb-1 text-indigo-500">
+                {date === getLocalDateStr(new Date()) ? 'Today' : date}
+              </h3>
+              <ul>
+                {tasks.map((task) => {
+                  const createdDateStr = task.created_at
+                    ? getLocalDateStr(new Date(task.created_at))
+                    : date
+                  const isOverdue =
+                    !task.completed &&
+                    createdDateStr < getLocalDateStr(new Date())
+
+                  return (
+                    <TaskItem
+                      key={task.id}
+                      id={task.id}
+                      title={task.title}
+                      completed={task.completed}
+                      created_at={task.created_at}
+                      isOverdue={isOverdue}
+                    />
+                  )
+                })}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
     </div>
   )

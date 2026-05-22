@@ -3,6 +3,7 @@ import { create } from 'zustand'
 type EditedTask = {
   id: number
   title: string
+  completed?: boolean
 }
 
 type State = {

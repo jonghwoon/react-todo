@@ -3,10 +3,9 @@ export type Task = {
   title: string
   created_at: Date
   updated_at: Date
+  completed?: boolean
 }
-export type CsrfToken = {
-  csrf_token: string
-}
+
 export type Credential = {
   email: string
   password: string
