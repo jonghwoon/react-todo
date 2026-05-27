@@ -1,0 +1,47 @@
+name: Deploy Go Backend
+
+on:
+  push:
+    branches: ['main'] # main 브랜치에 push 될 때 실행
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write # GHCR에 이미지를 업로드할 권한
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }} # 깃허브가 자동 발급하는 토큰 (따로 설정 불필요)
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Deploy to Lightsail Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.LIGHTSAIL_HOST }}
+          username: ${{ secrets.LIGHTSAIL_USERNAME }}
+          key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          script: |
+            cd ~/deploy
+            # 프론트엔드 이미지만 새로 다운로드하고 재실행
+            docker compose pull frontend
+            docker compose up -d frontend
+            docker image prune -f
