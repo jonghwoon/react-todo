@@ -32,6 +32,8 @@ jobs:
           context: .
           push: true
           tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          build-args: |
+            REACT_APP_API_URL=${{ secrets.REACT_APP_API_URL }}
 
       - name: Deploy to Lightsail Server
         uses: appleboy/ssh-action@v1.0.3

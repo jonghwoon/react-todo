@@ -9,6 +9,10 @@ RUN npm install
 
 # 소스 코드 복사 및 프로덕션 빌드 실행
 COPY . .
+
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=${REACT_APP_API_URL}
+
 RUN npm run build
 
 # 2단계: Nginx를 통한 정적 파일 서빙
